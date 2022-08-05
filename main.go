@@ -2,96 +2,188 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
-	. "github.com/samjtro/go-tda/data"
+
+	"github.com/samjtro/go-tda/data"
 )
 
 func main() {
-	fmt.Println(Set(PriceHistory("TSLA","month","3","daily","1")))
+	df, err := data.PriceHistory("TSLA", "month", "3", "daily", "1")
+
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	data1 := RMA(3, df)
+	data2 := EMA(10, data1)
+	data3 := RSI(data2)
+
+	fmt.Println(data3)
 }
 
-type RMA struct {
-	F		data.FRAME
-	RMA		float64
-	EMA		float64
-	//RSI
-	//VWAP
-	//MACD
-	//CHAIKIN
+type DATA struct {
+	Price          float64
+	RMA            float64
+	EMA            float64
+	RSI            float64
+	VWAP           float64
+	MACD           float64
+	Chaikin        float64
+	BollingerUpper float64
+	BollingerLower float64
+	IMI            float64
+	MFI            float64
+	PCR            float64
+	OI             float64
 }
 
-// SMA returns a simple moving average of length n,
-// for each FRAME in data
-func RMA(n float64,data data.[]FRAME) []FRAME {
-	var df []FRAME
-	for i,x := range data {
+func RMA(n float64, data []data.FRAME) []DATA {
+	d := []DATA{}
+
+	for i, frame := range data {
 		sum := 0.0
+
 		if i >= int(n) {
-			for a:=int(n); a!=0; a-- {
-				c,_ := strconv.ParseFloat(data[i-a].CLOSE,8)
+			for a := int(n); a != 0; a-- {
+				c, err := strconv.ParseFloat(data[i-a].Close, 64)
+
+				if err != nil {
+					log.Fatalf(err.Error())
+				}
+
 				sum += c
 			}
 
-			rma := sum/n
+			close, err := strconv.ParseFloat(frame.Close, 64)
 
-			f := FFRAME{
-				f:	x,
-				rma:	rma,
+			if err != nil {
+				log.Fatalf(err.Error())
 			}
 
-			df = append(df,f)
+			d1 := DATA{
+				Price: close,
+				RMA:   sum / n,
+			}
+
+			d = append(d, d1)
 		}
 	}
 
-	return df
+	return d
 }
 
-// EMA returns the exponential moving average of length n for multiplying factor mult,
-// for each FRAME of data
-func EMA(n,mult float64,data data.[]FRAME) []FRAME {
-	var df []FFRAME
-	for i,x := range data {
-		sum := 0.0
-		if i == int(n) {
-			c1,_ := strconv.ParseFloat(data[i-1].CLOSE,8)
-			for a:=2; a!=int(n)+1; a++ {
-				c,_ := strconv.ParseFloat(data[i-a].CLOSE,8)
-				sum += c
-			}
-			a := c1-sum/n
-			b := mult+sum/n
+func EMA(n float64, d []DATA) []DATA {
+	mult := 2 / (n + 1)
 
+	for i, _ := range d {
+		sum := 0.0
+
+		if i == int(n) {
+			for a := 2; a != int(n)+1; a++ {
+				sum += d[i-a].Price
+			}
+
+			a := d[i-1].Price - sum/n
+			b := mult + sum/n
 			ema := a * b
 
-			f := FFRAME{
-				f:	x,
-				rma:	ema,
-			}
-
-			df = append(df,f)
+			d[i].EMA = ema
 		} else if i > int(n) {
-			prevEma := df[len(df)-1].rma
-			c,_ := strconv.ParseFloat(df[len(df)-1].f.CLOSE,8)
-			ema := (c-prevEma)*mult+prevEma
+			prevEma := d[i-2].EMA
+			ema := (d[len(d)-1].Price-prevEma)*mult + prevEma
 
-			f := FFRAME{
-				f:	x,
-				rma:	ema,
-			}
-
-			df = append(df,f)
+			d[i].EMA = ema
 		}
 	}
 
-	return df
+	return d
 }
 
-//func RSI() {}
-//func VWAP() {}
-//func MACD() {}
-//func CHAIKIN() {}
+func RSI(d []DATA) []DATA {
+	gain := []float64{}
+	loss := []float64{}
+	var avgGain, avgLoss float64
 
-func Set(df []FRAME) []FFRAME {
-	return EMA(4,.4,df)
+	for i, _ := range d {
+		if i > 0 {
+			diff := d[i].Price - d[i-1].Price
+
+			if diff < 0 {
+				loss = append(loss, diff)
+			} else {
+				gain = append(gain, diff)
+			}
+		}
+
+		if i > 14 {
+			avgGain = AverageGainLoss(i, d, gain)
+			avgLoss = AverageGainLoss(i, d, loss)
+			rs := avgGain / avgLoss
+			d[i].RSI = 100 - (100 / (1 + rs))
+		}
+	}
+
+	return d
 }
 
+func InitialAverageGainLoss(data []float64) float64 {
+	sum := 0.0
+
+	for _, x := range data {
+		sum += x
+	}
+
+	return sum
+}
+
+func AverageGainLoss(i int, d []DATA, data []float64) float64 {
+	var initialAvgGainLoss, avgGainLoss float64
+	fmt.Println(i)
+
+	if len(data) >= 14 {
+		initialAvgGainLoss = InitialAverageGainLoss(data[(i - 13):])
+		avgGainLoss = ((initialAvgGainLoss * 13) + (d[i].Price - d[i-1].Price)) / 14
+	} else {
+		initialAvgGainLoss = InitialAverageGainLoss(data)
+		avgGainLoss = (initialAvgGainLoss*float64(len(data)-1) + (d[i].Price - d[i-1].Price)) / float64(len(data))
+	}
+
+	return avgGainLoss
+}
+
+func VWAP() {
+
+}
+
+func MACD() {
+
+}
+
+func Chaikin() {
+
+}
+
+func BollingerUpper() {
+
+}
+
+func BollingerLower() {
+
+}
+
+func IMI() {
+
+}
+
+func MFI() {
+
+}
+
+func PCR() {
+
+}
+
+func OI() {
+
+}
