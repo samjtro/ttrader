@@ -4,11 +4,24 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/samjtro/go-tda/data"
 )
 
+var (
+	m  sync.Mutex
+	m1 sync.Mutex
+	m2 sync.Mutex
+	m3 sync.Mutex
+	m4 sync.Mutex
+	m5 sync.Mutex
+	m6 sync.Mutex
+)
+
 func main() {
+	start := time.Now()
 	df, err := data.PriceHistory("TSLA", "month", "3", "daily", "1")
 
 	if err != nil {
@@ -16,14 +29,11 @@ func main() {
 	}
 
 	fmt.Println(Set(df))
+	fmt.Println(time.Since(start))
 }
 
 func Set(df []data.FRAME) []DATA {
-	data1 := RMA(3, df)
-	data2 := EMA(10, data1)
-	data3 := RSI(data2)
-	data4 := VWAP(df, data3)
-	data5 := MACD(data4)
+	data5 := MACD(VWAP(df, RSI(EMA(10, RMA(3, df)))))
 
 	return data5
 }
@@ -47,6 +57,8 @@ type DATA struct {
 // Calculates RMA, creates []DATA structure for use in the rest of the App, returns it
 func RMA(n float64, data []data.FRAME) []DATA {
 	d := []DATA{}
+
+	m.Lock()
 
 	for i, frame := range data {
 		sum := 0.0
@@ -77,12 +89,15 @@ func RMA(n float64, data []data.FRAME) []DATA {
 		}
 	}
 
+	m.Unlock()
 	return d
 }
 
 // Calculates EMA, adds to []DATA from RMA, return the []DATA
 func EMA(n float64, d []DATA) []DATA {
 	mult := 2 / (n + 1)
+
+	m1.Lock()
 
 	for i, _ := range d {
 		sum := 0.0
@@ -105,6 +120,7 @@ func EMA(n float64, d []DATA) []DATA {
 		}
 	}
 
+	m1.Unlock()
 	return d
 }
 
@@ -112,6 +128,8 @@ func RSI(d []DATA) []DATA {
 	gain := []float64{}
 	loss := []float64{}
 	var avgGain, avgLoss float64
+
+	m2.Lock()
 
 	for i, _ := range d {
 		if i > 0 {
@@ -132,11 +150,15 @@ func RSI(d []DATA) []DATA {
 		}
 	}
 
+	m2.Unlock()
 	return d
 }
 
 func InitialAverageGainLoss(data []float64) float64 {
 	sum := 0.0
+
+	m3.Lock()
+	defer m3.Unlock()
 
 	for _, x := range data {
 		sum += x
@@ -147,6 +169,9 @@ func InitialAverageGainLoss(data []float64) float64 {
 
 func AverageGainLoss(i int, d []DATA, data []float64) float64 {
 	var initialAvgGainLoss, avgGainLoss float64
+
+	m4.Lock()
+	defer m4.Unlock()
 
 	if len(data) >= (i - 13) {
 		initialAvgGainLoss = InitialAverageGainLoss(data[(i - 13):])
@@ -162,6 +187,7 @@ func AverageGainLoss(i int, d []DATA, data []float64) float64 {
 func VWAP(df []data.FRAME, d []DATA) []DATA {
 	var averagePrice float64
 
+	m5.Lock()
 	for i, x := range d {
 		for _, y := range df {
 			lo, err := strconv.ParseFloat(y.Lo, 64)
@@ -191,6 +217,7 @@ func VWAP(df []data.FRAME, d []DATA) []DATA {
 		}
 	}
 
+	m5.Unlock()
 	return d
 }
 
@@ -198,6 +225,8 @@ func MACD(d []DATA) []DATA {
 	var macd float64
 	twentySixDayEMA := EMA(26, d)
 	twelveDayEMA := EMA(12, d)
+
+	m6.Lock()
 
 	for _, x := range twentySixDayEMA {
 		for _, y := range twelveDayEMA {
@@ -208,6 +237,7 @@ func MACD(d []DATA) []DATA {
 		}
 	}
 
+	m6.Unlock()
 	return d
 }
 
