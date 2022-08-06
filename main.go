@@ -21,10 +21,11 @@ func main() {
 func Set(df []data.FRAME) []DATA {
 	data1 := RMA(3, df)
 	data2 := EMA(10, data1)
-	data3 := VWAP(df, data2)
-	data4 := MACD(data3)
+	data3 := RSI(data2)
+	data4 := VWAP(df, data3)
+	data5 := MACD(data4)
 
-	return data4
+	return data5
 }
 
 type DATA struct {
@@ -107,7 +108,6 @@ func EMA(n float64, d []DATA) []DATA {
 	return d
 }
 
-// WIP
 func RSI(d []DATA) []DATA {
 	gain := []float64{}
 	loss := []float64{}
