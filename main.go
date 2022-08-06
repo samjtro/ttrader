@@ -33,7 +33,7 @@ func main() {
 }
 
 func Set(df []data.FRAME) []DATA {
-	data5 := MACD(VWAP(df, RSI(EMA(10, RMA(3, df)))))
+	data5 := Chaikin(21, MACD(VWAP(df, RSI(EMA(10, RMA(3, df))))), df)
 
 	return data5
 }
@@ -241,8 +241,50 @@ func MACD(d []DATA) []DATA {
 	return d
 }
 
-func Chaikin() {
+func Chaikin(p int, d []DATA, df []data.FRAME) []DATA {
+	var Helper []DATA
 
+	for _, x := range d {
+		for _, y := range df {
+			lo, err := strconv.ParseFloat(y.Lo, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			hi, err := strconv.ParseFloat(y.Hi, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			vol, err := strconv.ParseFloat(y.Volume, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			n := ((x.Price - lo) - (hi - x.Price)) / (hi - lo)
+			m := n * (vol * float64(p))
+			adl := (m * float64(p-1)) + (m * float64(p))
+			d1 := DATA{Price: adl}
+
+			Helper = append(Helper, d1)
+		}
+	}
+
+	threeDayEMA := EMA(3, Helper)
+	tenDayEMA := EMA(10, Helper)
+
+	for _, x := range threeDayEMA {
+		for _, y := range tenDayEMA {
+			for i, _ := range d {
+				d[i].Chaikin = x.EMA - y.EMA
+			}
+		}
+	}
+
+	return d
 }
 
 func BollingerUpper() {
