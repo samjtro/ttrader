@@ -15,11 +15,16 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
+	fmt.Println(Set(df))
+}
+
+func Set(df []data.FRAME) []DATA {
 	data1 := RMA(3, df)
 	data2 := EMA(10, data1)
-	data3 := RSI(data2)
+	data3 := VWAP(df, data2)
+	data4 := MACD(data3)
 
-	fmt.Println(data3)
+	return data4
 }
 
 type DATA struct {
@@ -38,6 +43,7 @@ type DATA struct {
 	OI             float64
 }
 
+// Calculates RMA, creates []DATA structure for use in the rest of the App, returns it
 func RMA(n float64, data []data.FRAME) []DATA {
 	d := []DATA{}
 
@@ -73,6 +79,7 @@ func RMA(n float64, data []data.FRAME) []DATA {
 	return d
 }
 
+// Calculates EMA, adds to []DATA from RMA, return the []DATA
 func EMA(n float64, d []DATA) []DATA {
 	mult := 2 / (n + 1)
 
@@ -100,6 +107,7 @@ func EMA(n float64, d []DATA) []DATA {
 	return d
 }
 
+// WIP
 func RSI(d []DATA) []DATA {
 	gain := []float64{}
 	loss := []float64{}
@@ -139,9 +147,8 @@ func InitialAverageGainLoss(data []float64) float64 {
 
 func AverageGainLoss(i int, d []DATA, data []float64) float64 {
 	var initialAvgGainLoss, avgGainLoss float64
-	fmt.Println(i)
 
-	if len(data) >= 14 {
+	if len(data) >= (i - 13) {
 		initialAvgGainLoss = InitialAverageGainLoss(data[(i - 13):])
 		avgGainLoss = ((initialAvgGainLoss * 13) + (d[i].Price - d[i-1].Price)) / 14
 	} else {
@@ -152,12 +159,56 @@ func AverageGainLoss(i int, d []DATA, data []float64) float64 {
 	return avgGainLoss
 }
 
-func VWAP() {
+func VWAP(df []data.FRAME, d []DATA) []DATA {
+	var averagePrice float64
 
+	for i, x := range d {
+		for _, y := range df {
+			lo, err := strconv.ParseFloat(y.Lo, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			hi, err := strconv.ParseFloat(y.Hi, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			vol, err := strconv.ParseFloat(y.Volume, 64)
+
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+
+			averagePrice += x.Price
+			averagePrice += lo
+			averagePrice += hi
+			vwap := averagePrice / vol
+
+			d[i].VWAP = vwap
+		}
+	}
+
+	return d
 }
 
-func MACD() {
+func MACD(d []DATA) []DATA {
+	var macd float64
+	twentySixDayEMA := EMA(26, d)
+	twelveDayEMA := EMA(12, d)
 
+	for _, x := range twentySixDayEMA {
+		for _, y := range twelveDayEMA {
+			for i, _ := range d {
+				macd = y.EMA - x.EMA
+				d[i].MACD = macd
+			}
+		}
+	}
+
+	return d
 }
 
 func Chaikin() {
