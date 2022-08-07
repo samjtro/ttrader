@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"strconv"
 	"sync"
 	"time"
 
@@ -69,14 +68,8 @@ func SetPrices(df []data.FRAME) DataSlice {
 	d := DataSlice{}
 
 	for _, x := range df {
-		close, err := strconv.ParseFloat(x.Close, 64)
-
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-
 		d1 := DATA{
-			Price: close,
+			Price: x.Close,
 		}
 
 		d = append(d, d1)
@@ -96,13 +89,7 @@ func (d DataSlice) RMA(n float64, df []data.FRAME, wg *sync.WaitGroup) {
 
 			if i >= int(n) {
 				for a := int(n); a != 0; a-- {
-					c, err := strconv.ParseFloat(df[i-a].Close, 64)
-
-					if err != nil {
-						log.Fatalf(err.Error())
-					}
-
-					sum += c
+					sum += df[i-a].Close
 				}
 
 				d[j].RMA = sum / n
@@ -244,28 +231,8 @@ func (d DataSlice) VWAP(df []data.FRAME, wg *sync.WaitGroup) {
 
 	for i, x := range d {
 		for _, y := range df {
-			lo, err := strconv.ParseFloat(y.Lo, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			hi, err := strconv.ParseFloat(y.Hi, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			vol, err := strconv.ParseFloat(y.Volume, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			averagePrice += x.Price
-			averagePrice += lo
-			averagePrice += hi
-			vwap := averagePrice / vol
+			averagePrice += (x.Price + y.Lo + y.Hi)
+			vwap := averagePrice / y.Volume
 
 			d[i].VWAP = vwap
 		}
@@ -301,26 +268,8 @@ func (d DataSlice) Chaikin(p int, df []data.FRAME, wg *sync.WaitGroup) {
 
 	for _, x := range d {
 		for _, y := range df {
-			lo, err := strconv.ParseFloat(y.Lo, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			hi, err := strconv.ParseFloat(y.Hi, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			vol, err := strconv.ParseFloat(y.Volume, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			n := ((x.Price - lo) - (hi - x.Price)) / (hi - lo)
-			m := n * (vol * float64(p))
+			n := ((x.Price - y.Lo) - (y.Hi - x.Price)) / (y.Hi - y.Lo)
+			m := n * (y.Volume * float64(p))
 			adl := (m * float64(p-1)) + (m * float64(p))
 			d1 := DATA{Price: adl}
 
