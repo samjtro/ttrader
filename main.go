@@ -45,26 +45,13 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	fmt.Println(Set(df))
+	d := FRAMEToDataSlice(df)
+	d.Set(df)
+	fmt.Println(d)
 	fmt.Println(time.Since(start))
 }
 
-func Set(df []data.FRAME) DataSlice {
-	d := SetPrices(df)
-	wg := new(sync.WaitGroup)
-	wg.Add(5)
-	go d.RMA(3, df, wg)
-	go d.EMA(10, wg)
-	go d.RSI(wg)
-	go d.VWAP(df, wg)
-	go d.MACD(wg)
-	wg.Wait()
-	// go d.Chaikin(21, df)
-
-	return d
-}
-
-func SetPrices(df []data.FRAME) DataSlice {
+func FRAMEToDataSlice(df []data.FRAME) DataSlice {
 	d := DataSlice{}
 
 	for _, x := range df {
@@ -76,6 +63,18 @@ func SetPrices(df []data.FRAME) DataSlice {
 	}
 
 	return d
+}
+
+func (d DataSlice) Set(df []data.FRAME) {
+	wg := new(sync.WaitGroup)
+	wg.Add(5)
+	go d.RMA(3, df, wg)
+	go d.EMA(10, wg)
+	go d.RSI(wg)
+	go d.VWAP(df, wg)
+	go d.MACD(wg)
+	wg.Wait()
+	// go d.Chaikin(21, df)
 }
 
 // Calculates RMA, creates []DATA structure for use in the rest of the App, returns it
