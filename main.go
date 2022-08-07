@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"sync"
@@ -10,13 +11,18 @@ import (
 )
 
 var (
-	m  sync.Mutex
-	m1 sync.Mutex
-	m2 sync.Mutex
-	m3 sync.Mutex
-	m4 sync.Mutex
-	m5 sync.Mutex
-	m6 sync.Mutex
+	tickerFlag     string
+	periodTypeFlag string
+	periodFlag     string
+	freqTypeFlag   string
+	freqFlag       string
+	m              sync.Mutex
+	m1             sync.Mutex
+	m2             sync.Mutex
+	m3             sync.Mutex
+	m4             sync.Mutex
+	m5             sync.Mutex
+	m6             sync.Mutex
 )
 
 type DATA struct {
@@ -39,7 +45,14 @@ type DataSlice []DATA
 
 func main() {
 	start := time.Now()
-	df, err := data.PriceHistory("TSLA", "month", "3", "daily", "1")
+
+	flag.StringVar(&tickerFlag, "t", "AAPL", "Ticker of the Stock you want to look up.")
+	flag.StringVar(&periodTypeFlag, "pt", "month", "Period Type of the return; e.g. day, month, year.")
+	flag.StringVar(&periodFlag, "p", "3", "Number of periodTypes to return in the []FRAME.")
+	flag.StringVar(&freqTypeFlag, "ft", "daily", "Frequency Type of the return - Valid fTypes by pType; day: minute / month: daily, weekly / year: daily, weekly, monthly / ytd: daily, weekly.")
+	flag.StringVar(&freqFlag, "f", "1", "Frequency of the return in the []FRAME.")
+	flag.Parse()
+	df, err := data.PriceHistory(tickerFlag, periodTypeFlag, periodFlag, freqTypeFlag, freqFlag)
 
 	if err != nil {
 		log.Fatalf(err.Error())
