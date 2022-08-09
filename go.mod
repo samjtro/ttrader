@@ -2,7 +2,10 @@ module github.com/samjtro/go-algotrader
 
 go 1.18
 
-require github.com/samjtro/go-tda v0.8.2
+require (
+	github.com/montanaflynn/stats v0.6.6
+	github.com/samjtro/go-tda v0.8.2
+)
 
 require (
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
