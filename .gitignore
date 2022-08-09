@@ -44,3 +44,6 @@ Footer
 
 # IDE
 .idea/
+
+# Custom
+*.env
