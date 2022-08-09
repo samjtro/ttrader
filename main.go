@@ -269,11 +269,9 @@ func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 	defer wg.Done()
 	m5.Lock()
 
-	var averagePrice float64
-
 	for i, x := range d {
-		averagePrice += (x.Close + x.Lo + x.Hi)
-		vwap := averagePrice / x.Volume
+		typicalPrice := (x.Close + x.Lo + x.Hi) / 3
+		vwap := (typicalPrice * x.Volume) / x.Volume
 
 		d[i].VWAP = vwap
 	}
@@ -283,7 +281,6 @@ func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 
 func (d DataSlice) MACD(wg *sync.WaitGroup) {
 	defer wg.Done()
-	var macd float64
 
 	twentySixDayEMA := Ema(26, d)
 	twelveDayEMA := Ema(12, d)
@@ -293,7 +290,7 @@ func (d DataSlice) MACD(wg *sync.WaitGroup) {
 	for _, x := range twentySixDayEMA {
 		for _, y := range twelveDayEMA {
 			for i, _ := range d {
-				macd = y.EMA - x.EMA
+				macd := y.EMA - x.EMA
 				d[i].MACD = macd
 			}
 		}
