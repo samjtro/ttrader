@@ -122,12 +122,12 @@ func (d DataSlice) PivotPoints(wg *sync.WaitGroup) {
 	}
 }
 
-// Calculates RMA, creates []DATA structure for use in the rest of the App, returns it
+// RMA Calculates, creates []DATA structure for use in the rest of the App, returns it
 func (d DataSlice) RMA(n float64, wg *sync.WaitGroup) {
 	defer wg.Done()
 	m.Lock()
 
-	for i, _ := range d {
+	for i := range d {
 		sum := 0.0
 
 		if i >= int(n) {
@@ -142,14 +142,14 @@ func (d DataSlice) RMA(n float64, wg *sync.WaitGroup) {
 	m.Unlock()
 }
 
-// Calculates EMA, adds to []DATA from RMA, return the []DATA
+// EMA Calculates, adds to []DATA from RMA, return the []DATA
 func (d DataSlice) EMA(n float64, wg *sync.WaitGroup) {
 	defer wg.Done()
 	m1.Lock()
 
 	mult := 2 / (n + 1)
 
-	for i, _ := range d {
+	for i := range d {
 		sum := 0.0
 
 		if i == int(n) {
@@ -173,13 +173,13 @@ func (d DataSlice) EMA(n float64, wg *sync.WaitGroup) {
 	m1.Unlock()
 }
 
-// Calculates EMA, adds to []DATA from RMA, return the []DATA
+// Ema Calculates, adds to []DATA from RMA, return the []DATA
 func Ema(n float64, d DataSlice) DataSlice {
 	m1.Lock()
 
 	mult := 2 / (n + 1)
 
-	for i, _ := range d {
+	for i := range d {
 		sum := 0.0
 
 		if i == int(n) {
@@ -209,11 +209,10 @@ func (d DataSlice) RSI(wg *sync.WaitGroup) {
 	defer wg.Done()
 	m2.Lock()
 
-	gain := []float64{}
-	loss := []float64{}
+	var gain, loss []float64
 	var avgGain, avgLoss float64
 
-	for i, _ := range d {
+	for i := range d {
 		if i > 0 {
 			diff := d[i].Close - d[i-1].Close
 
@@ -289,7 +288,7 @@ func (d DataSlice) MACD(wg *sync.WaitGroup) {
 
 	for _, x := range twentySixDayEMA {
 		for _, y := range twelveDayEMA {
-			for i, _ := range d {
+			for i := range d {
 				macd := y.EMA - x.EMA
 				d[i].MACD = macd
 			}
@@ -317,7 +316,7 @@ func (d DataSlice) Chaikin(p int, wg *sync.WaitGroup) {
 
 	for _, x := range threeDayEMA {
 		for _, y := range tenDayEMA {
-			for i, _ := range d {
+			for i := range d {
 				d[i].Chaikin = x.EMA - y.EMA
 			}
 		}
@@ -360,7 +359,7 @@ func (d DataSlice) SMA(n int, wg *sync.WaitGroup) {
 }
 
 func Sma(n int, d DataSlice) DataSlice {
-	for i, _ := range d {
+	for i := range d {
 		sum := 0.0
 		if i >= n {
 			for a := 0; a < n; a++ {
