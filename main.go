@@ -67,62 +67,32 @@ func main() {
 	}
 
 	d := FRAMEToDataSlice(df)
-	d.Set(df)
+	d.Set()
 	fmt.Println(d)
 	fmt.Println(time.Since(start))
 }
 
-func FRAMEToDataSlice(df []data.FRAME) DataSlice {
-	d := DataSlice{}
+// Set SMA values for the given DataSlice
+func (d DataSlice) SMA(n int, wg *sync.WaitGroup) {
 
-	for _, x := range df {
-		d1 := DATA{
-			Close:  x.Close,
-			Hi:     x.Hi,
-			Lo:     x.Lo,
-			Volume: x.Volume,
+}
+
+func Sma(n int, d DataSlice) DataSlice {
+	for i := range d {
+		sum := 0.0
+		if i >= n {
+			for a := 0; a < n; a++ {
+				sum += (d[i-a].Close + d[i-a].Hi + d[i-a].Lo) / 3
+			}
+
+			d[i].SMA = sum / float64(n)
 		}
-
-		d = append(d, d1)
 	}
 
 	return d
 }
 
-func (d DataSlice) Set(df []data.FRAME) {
-	wg := new(sync.WaitGroup)
-	wg.Add(7)
-	go d.PivotPoints(wg)
-	go d.RMA(3, wg)
-	go d.EMA(10, wg)
-	go d.RSI(wg)
-	go d.VWAP(wg)
-	go d.MACD(wg)
-	go d.BollingerBands(wg)
-	wg.Wait()
-	// go d.Chaikin(21, df)
-}
-
-func (d DataSlice) PivotPoints(wg *sync.WaitGroup) {
-	defer wg.Done()
-	m7.Lock()
-
-	for i, x := range d {
-		pivotPoint := (x.Hi + x.Lo + x.Close) / 3
-		firstResistance := (2 * pivotPoint) - x.Lo
-		firstSupport := (2 * pivotPoint) - x.Hi
-		secondResistance := pivotPoint + (x.Hi - x.Lo)
-		secondSupport := pivotPoint - (x.Hi - x.Lo)
-		thirdResistance := x.Hi + (2 * (pivotPoint - x.Lo))
-		thirdSupport := x.Lo - (2 * (x.Hi - pivotPoint))
-
-		d[i].PivotPoint = pivotPoint
-		d[i].ResistancePoints = []float64{firstResistance, secondResistance, thirdResistance}
-		d[i].SupportPoints = []float64{firstSupport, secondSupport, thirdSupport}
-	}
-}
-
-// RMA Calculates, creates []DATA structure for use in the rest of the App, returns it
+// Set RMA values for the given DataSlice
 func (d DataSlice) RMA(n float64, wg *sync.WaitGroup) {
 	defer wg.Done()
 	m.Lock()
@@ -142,7 +112,7 @@ func (d DataSlice) RMA(n float64, wg *sync.WaitGroup) {
 	m.Unlock()
 }
 
-// EMA Calculates, adds to []DATA from RMA, return the []DATA
+// Set EMA values for the given DataSlice
 func (d DataSlice) EMA(n float64, wg *sync.WaitGroup) {
 	defer wg.Done()
 	m1.Lock()
@@ -173,7 +143,6 @@ func (d DataSlice) EMA(n float64, wg *sync.WaitGroup) {
 	m1.Unlock()
 }
 
-// Ema Calculates, adds to []DATA from RMA, return the []DATA
 func Ema(n float64, d DataSlice) DataSlice {
 	m1.Lock()
 
@@ -205,6 +174,27 @@ func Ema(n float64, d DataSlice) DataSlice {
 	return d
 }
 
+// Calculate Pivot, Resistance & Support Points
+func (d DataSlice) PivotPoints(wg *sync.WaitGroup) {
+	defer wg.Done()
+	m7.Lock()
+
+	for i, x := range d {
+		pivotPoint := (x.Hi + x.Lo + x.Close) / 3
+		firstResistance := (2 * pivotPoint) - x.Lo
+		firstSupport := (2 * pivotPoint) - x.Hi
+		secondResistance := pivotPoint + (x.Hi - x.Lo)
+		secondSupport := pivotPoint - (x.Hi - x.Lo)
+		thirdResistance := x.Hi + (2 * (pivotPoint - x.Lo))
+		thirdSupport := x.Lo - (2 * (x.Hi - pivotPoint))
+
+		d[i].PivotPoint = pivotPoint
+		d[i].ResistancePoints = []float64{firstResistance, secondResistance, thirdResistance}
+		d[i].SupportPoints = []float64{firstSupport, secondSupport, thirdSupport}
+	}
+}
+
+// Set RSI values for the given DataSlice
 func (d DataSlice) RSI(wg *sync.WaitGroup) {
 	defer wg.Done()
 	m2.Lock()
@@ -234,36 +224,7 @@ func (d DataSlice) RSI(wg *sync.WaitGroup) {
 	m2.Unlock()
 }
 
-func InitialAverageGainLoss(data []float64) float64 {
-	sum := 0.0
-
-	m3.Lock()
-	defer m3.Unlock()
-
-	for _, x := range data {
-		sum += x
-	}
-
-	return sum
-}
-
-func AverageGainLoss(i int, d []DATA, data []float64) float64 {
-	var initialAvgGainLoss, avgGainLoss float64
-
-	m4.Lock()
-	defer m4.Unlock()
-
-	if len(data) >= (i - 13) {
-		initialAvgGainLoss = InitialAverageGainLoss(data[(i - 13):])
-		avgGainLoss = ((initialAvgGainLoss * 13) + (d[i].Close - d[i-1].Close)) / 14
-	} else {
-		initialAvgGainLoss = InitialAverageGainLoss(data)
-		avgGainLoss = (initialAvgGainLoss*float64(len(data)-1) + (d[i].Close - d[i-1].Close)) / float64(len(data))
-	}
-
-	return avgGainLoss
-}
-
+// Set VWAP values for the given DataSlice
 func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 	defer wg.Done()
 	m5.Lock()
@@ -278,6 +239,7 @@ func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 	m5.Unlock()
 }
 
+// Set MACD values for the given DataSlice
 func (d DataSlice) MACD(wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -298,6 +260,7 @@ func (d DataSlice) MACD(wg *sync.WaitGroup) {
 	m6.Unlock()
 }
 
+// Set Chaikin values for the given DataSlice
 func (d DataSlice) Chaikin(p int, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var Helper DataSlice
@@ -323,6 +286,7 @@ func (d DataSlice) Chaikin(p int, wg *sync.WaitGroup) {
 	}
 }
 
+// Set Bollinger Bands for the given DataSlice
 func (d DataSlice) BollingerBands(wg *sync.WaitGroup) {
 	defer wg.Done()
 	var stdDevHelper []float64
@@ -354,37 +318,47 @@ func (d DataSlice) BollingerBands(wg *sync.WaitGroup) {
 	}
 }
 
-func (d DataSlice) SMA(n int, wg *sync.WaitGroup) {
+// Set IMI values for the given DataSlice
+func IMI(n int, d DataSlice, wg *sync.WaitGroup) {
+	defer wg.Done()
+	m2.Lock()
 
-}
+	var gain, loss []float64
+	var avgGain, avgLoss float64
 
-func Sma(n int, d DataSlice) DataSlice {
 	for i := range d {
-		sum := 0.0
-		if i >= n {
-			for a := 0; a < n; a++ {
-				sum += (d[i-a].Close + d[i-a].Hi + d[i-a].Lo) / 3
-			}
+		if i > 0 {
+			diff := d[i].Close - d[i-1].Close
 
-			d[i].SMA = sum / float64(n)
+			if diff < 0 {
+				loss = append(loss, diff)
+			} else {
+				gain = append(gain, diff)
+			}
+		}
+
+		if i > 14 {
+			avgGain = AverageGainLoss(i, d, gain)
+			avgLoss = AverageGainLoss(i, d, loss)
+			rs := avgGain / avgLoss
+			d[i].RSI = 100 - (100 / (1 + rs))
 		}
 	}
 
-	return d
+	m2.Unlock()
 }
 
-func IMI() {
-
-}
-
+// Set MFI values for the given DataSlice
 func MFI() {
 
 }
 
+// Set PCR values for the given DataSlice
 func PCR() {
 
 }
 
+// Set OI values for the given DataSlice
 func OI() {
 
 }
