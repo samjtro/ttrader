@@ -68,7 +68,7 @@ func main() {
 
 	d := FRAMEToDataSlice(df)
 	d.Set()
-	fmt.Println(d)
+	fmt.Printf("%+v\n", d)
 	fmt.Println(time.Since(start))
 }
 
@@ -242,18 +242,19 @@ func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 // Set MACD values for the given DataSlice
 func (d DataSlice) MACD(wg *sync.WaitGroup) {
 	defer wg.Done()
-
-	twentySixDayEMA := Ema(26, d)
-	twelveDayEMA := Ema(12, d)
-
+	var wg1 *sync.WaitGroup
+	defer wg1.Done()
 	m6.Lock()
 
-	for _, x := range twentySixDayEMA {
-		for _, y := range twelveDayEMA {
-			for i := range d {
-				macd := y.EMA - x.EMA
-				d[i].MACD = macd
-			}
+	d2 := make(DataSlice, len(d))
+	copy(d, d2)
+
+	d2.EMA(26, wg1)
+
+	for i, x := range d {
+		for _, y := range d2 {
+			macd := x.EMA - y.EMA
+			d[i].MACD = macd
 		}
 	}
 

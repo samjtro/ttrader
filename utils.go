@@ -31,7 +31,7 @@ func (d DataSlice) Set() {
 
 	go d.PivotPoints(wg)
 	go d.RMA(3, wg)
-	go d.EMA(10, wg)
+	go d.EMA(12, wg)
 	go d.RSI(wg)
 	go d.VWAP(wg)
 	go d.MACD(wg)
