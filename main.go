@@ -241,16 +241,17 @@ func (d DataSlice) VWAP(wg *sync.WaitGroup) {
 
 // Set MACD values for the given DataSlice
 func (d DataSlice) MACD(wg *sync.WaitGroup) {
-	var wg1 *sync.WaitGroup
+	wg1 := new(sync.WaitGroup)
 	defer wg.Done()
-	wg1.Add(1)
-	defer wg1.Done()
-	m6.Lock()
 
+	m6.Lock()
 	d2 := make(DataSlice, len(d))
-	copy(d, d2)
+	copy(d2, d)
+	wg1.Add(1)
 
 	go d2.EMA(26, wg1)
+
+	wg1.Wait()
 
 	for i, x := range d {
 		for _, y := range d2 {
