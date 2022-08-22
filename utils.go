@@ -27,7 +27,7 @@ func FRAMEToDataSlice(df []data.FRAME) DataSlice {
 // Set all indicators for the given DataSlice
 func (d DataSlice) Set() {
 	wg := new(sync.WaitGroup)
-	wg.Add(7)
+	wg.Add(8)
 
 	go d.PivotPoints(wg)
 	go d.RMA(3, wg)
@@ -36,6 +36,7 @@ func (d DataSlice) Set() {
 	go d.VWAP(wg)
 	go d.MACD(wg)
 	go d.BollingerBands(wg)
+	go d.IMI(wg)
 	// go d.Chaikin(21, df)
 
 	wg.Wait()
