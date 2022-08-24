@@ -55,7 +55,7 @@ func main() {
 
 	flag.StringVar(&tickerFlag, "t", "AAPL", "Ticker of the Stock you want to look up.")
 	flag.StringVar(&periodTypeFlag, "pt", "month", "Period Type of the return; e.g. day, month, year.")
-	flag.StringVar(&periodFlag, "p", "3", "Number of periodTypes to return in the []FRAME.")
+	flag.StringVar(&periodFlag, "p", "1", "Number of periodTypes to return in the []FRAME.")
 	flag.StringVar(&freqTypeFlag, "ft", "daily", "Frequency Type of the return - Valid fTypes by pType; day: minute / month: daily, weekly / year: daily, weekly, monthly / ytd: daily, weekly.")
 	flag.StringVar(&freqFlag, "f", "1", "Frequency of the return in the []FRAME.")
 	flag.Parse()
