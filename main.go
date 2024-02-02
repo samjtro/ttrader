@@ -22,6 +22,7 @@ var (
 )
 
 func main() {
+	//TODO: Something in this block is causing an error
 	tickersList.SetSelectedFunc(func(index int, ticker string, secondary string, shortcut rune) {
 		pullTickerData((tickers[index]))
 	})
@@ -75,6 +76,7 @@ func searchTicker() *tview.Form {
 	return form
 }
 
+//TODO: Potentially broken, need to figure out a way to signal this is triggering
 func pullTickerData(ticker string) {
 	tickerText.Clear()
 	quote, err := data.RealTime(ticker)
