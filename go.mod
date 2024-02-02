@@ -1,4 +1,4 @@
-module github.com/samjtro/go-algotrader
+module github.com/samjtro/ttrader
 
 go 1.18
 
