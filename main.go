@@ -2,21 +2,11 @@ package main
 
 import (
 	"log"
-	"encoding/json"
-	"fmt"
 
 	"github.com/samjtro/go-tda/data"
 	"github.com/gdamore/tcell/v2"
         "github.com/rivo/tview"
 )
-
-type optionFlags struct {
-	ticker string
-	periodType string
-	period string
-	freqType string
-	freq string
-}
 
 var (
 	app = tview.NewApplication()
@@ -27,13 +17,13 @@ var (
 		SetTextColor(tcell.ColorGreen).
 		SetText("(n) to search for a new ticker\n(q) to quit")
 	flex = tview.NewFlex()
-	tickers = make([]optionFlags, 0)
+	tickers = make(map[int]string)
 	tickersList = tview.NewList().ShowSecondaryText(false)
 )
 
 func main() {
-	tickersList.SetSelectedFunc(func(index int, ticker string, company string, shortcut rune) {
-		pullTickerData((&tickers[index]).ticker) //TODO: I think the problem is this func
+	tickersList.SetSelectedFunc(func(index int, ticker string, secondary string, shortcut rune) {
+		pullTickerData((tickers[index]))
 	})
 
 	flex.SetDirection(tview.FlexRow).
@@ -64,20 +54,20 @@ func main() {
 func addTickerList() {
 	tickersList.Clear()
 
-	for index, ticker := range tickers {
-		tickersList.AddItem(ticker.ticker, " ", rune(49+index), nil)
+	for i := 0; i <= len(tickers); i++ {
+		tickersList.AddItem(tickers[i], " ", rune(49+i), nil)
 	}
 }
 
 func searchTicker() *tview.Form {
-	list := optionFlags{}
+	var ticker string
 
-        form.AddInputField("Ticker", "", 20, nil, func(ticker string) {
-		list.ticker = ticker
-        })
+        form.AddInputField("Ticker", "", 20, nil, func(t string) {
+		ticker = t
+	})
 
 	form.AddButton("Save", func() {
-		tickers = append(tickers, list)
+		tickers[len(tickers)] = ticker
 		addTickerList()
 		pages.SwitchToPage("Menu")
 	})
@@ -85,7 +75,6 @@ func searchTicker() *tview.Form {
 	return form
 }
 
-// TODO: This function does not work as intended, potentially it is json.Marshal that is giving me the issue?
 func pullTickerData(ticker string) {
 	tickerText.Clear()
 	quote, err := data.RealTime(ticker)
@@ -94,11 +83,6 @@ func pullTickerData(ticker string) {
         	log.Fatalf(err.Error())
 	}
 
-	text, err := json.Marshal(quote)
-
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	tickerText.SetText(string(text))
+	text := "DateTime: " + quote.Datetime + "\nTicker: " + quote.Ticker
+	tickerText.SetText(text)
 }

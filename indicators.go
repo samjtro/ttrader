@@ -7,6 +7,18 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
+/*
+
+RealTime
+
+*/
+
+/*
+
+PriceHistory
+
+*/
+
 // Set SMA values for the given DataSlice
 func (d DataSlice) SMA(n int, wg *sync.WaitGroup) {
 
