@@ -47,3 +47,5 @@ Footer
 
 # Custom
 *.env
+*.json
+localhost.*

@@ -3,49 +3,49 @@ package main
 import (
 	"sync"
 
-	"github.com/samjtro/go-tda/data"
+	"github.com/go-schwab/trader"
 )
 
 var (
-        m              sync.Mutex
-        m1             sync.Mutex
-        m2             sync.Mutex
-        m3             sync.Mutex
-        m4             sync.Mutex
-        m5             sync.Mutex
-        m6             sync.Mutex
-        m7             sync.Mutex
+	m  sync.Mutex
+	m1 sync.Mutex
+	m2 sync.Mutex
+	m3 sync.Mutex
+	m4 sync.Mutex
+	m5 sync.Mutex
+	m6 sync.Mutex
+	m7 sync.Mutex
 )
 
 type DATA struct {
-        Close            float64
-        Hi               float64
-        Lo               float64
-        Volume           float64
-        PivotPoint       float64
-        ResistancePoints []float64
-        SupportPoints    []float64
-        SMA              float64
-        RMA              float64
-        EMA              float64
-        RSI              float64
-        VWAP             float64
-        MACD             float64
-        Chaikin          float64
-        BollingerBands   []float64
-        IMI              float64
-        MFI              float64
-        PCR              float64
-        OI               float64
+	Close            float64
+	Hi               float64
+	Lo               float64
+	Volume           int
+	PivotPoint       float64
+	ResistancePoints []float64
+	SupportPoints    []float64
+	SMA              float64
+	RMA              float64
+	EMA              float64
+	RSI              float64
+	VWAP             float64
+	MACD             float64
+	Chaikin          float64
+	BollingerBands   []float64
+	IMI              float64
+	MFI              float64
+	PCR              float64
+	OI               float64
 }
 
 type DataSlice []DATA
 
 // Marshal the []FRAME returned by go-tda calls into a DataSlice
-func FRAMEToDataSlice(df []data.FRAME) DataSlice {
+func CandleToDataSlice(data []trader.Candle) DataSlice {
 	d := DataSlice{}
 
-	for _, x := range df {
+	for _, x := range data {
 		d1 := DATA{
 			Close:  x.Close,
 			Hi:     x.Hi,
